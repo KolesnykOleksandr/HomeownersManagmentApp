@@ -7,8 +7,6 @@
 
 <h3>Home Management</h3>
 
-<button class="btn btn-primary" @onclick="OnClick">Click me</button>
-
 <SfDropDownList TValue="Guid" TItem="View"
                 Placeholder="Select a view"
                 DataSource="@Views"
@@ -48,7 +46,6 @@
 {
     private List<string> groupColumns = new List<string>();
     private List<HomeModel> homes = new List<HomeModel>();
-    private List<string> columns = new List<string>();
     private List<View> Views = null;
 
 
@@ -83,7 +80,6 @@
         Views = _viewService.GetViews(Guid.NewGuid()).Result;
         selectedViewId = Views[0].Id;
         selectedView = Views[0];
-        columns = selectedView.Settings;
 
         report = new ReportModel()
             {
