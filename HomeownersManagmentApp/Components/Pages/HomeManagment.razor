@@ -1,0 +1,331 @@
+﻿@page "/HomeManagment"
+@using HomeownersManagmentApp.Interfaces
+@using HomeownersManagmentApp.Models
+@using Syncfusion.Blazor.DropDowns
+@using Syncfusion.Blazor.Grids
+@rendermode InteractiveAuto
+
+<h3>Home Management</h3>
+
+<button class="btn btn-primary" @onclick="OnClick">Click me</button>
+
+<SfDropDownList TValue="Guid" TItem="View"
+                Placeholder="Select a view"
+                DataSource="@Views"
+                @bind-Value="selectedViewId"
+                Width="300px">
+    <DropDownListFieldSettings Value="Id" Text="Name"></DropDownListFieldSettings>
+</SfDropDownList>
+
+<div style="max-width:1000px; height: 480px">
+    <SfGrid DataSource="@homes"
+            AllowSorting="true"
+            AllowGrouping="true"
+            AllowFiltering="true"
+            Height="100%"
+            RowHeight="40"
+            GridLines="GridLine.Both">
+        <GridFilterSettings Type="Syncfusion.Blazor.Grids.FilterType.Menu"></GridFilterSettings>
+        <GridGroupSettings Columns="@groupColumns.ToArray()"></GridGroupSettings>
+        <GridColumns>
+            @foreach (var prop in report.Columns)
+                {
+                    <GridColumn Field="@prop.name"
+                        IsPrimaryKey="@(prop.name=="Id")"
+                        HeaderText="@prop.header"
+                        Type="@GetColumnType(prop.type)"
+                        Width="150"
+                        Format="@prop.format"
+                        Visible="@IsShown(prop.name)">
+                    @* Visible="@isVisible"> *@
+                    </GridColumn>
+            }
+        </GridColumns>
+    </SfGrid>
+</div>
+
+@code   
+{
+    private List<string> groupColumns = new List<string>();
+    private List<HomeModel> homes = new List<HomeModel>();
+    private List<string> columns = new List<string>();
+    private List<View> Views = null;
+
+
+    private ReportModel report = null;
+    private IViewService _viewService;
+
+    private bool isVisible = true; 
+    private Guid _selectedViewId;
+    private Guid selectedViewId
+    {
+        get => _selectedViewId;
+        set
+        {
+            if (_selectedViewId != value)
+            {
+                _selectedViewId = value;
+                OnViewChanged();
+            }
+        }
+    }
+    private View selectedView;
+
+
+
+    public HomeManagment(IViewService viewService)
+    {
+        _viewService = viewService;
+    }
+
+    protected override void OnInitialized()
+    {
+        Views = _viewService.GetViews(Guid.NewGuid()).Result;
+        selectedViewId = Views[0].Id;
+        selectedView = Views[0];
+        columns = selectedView.Settings;
+
+        report = new ReportModel()
+            {
+                ReportId = 1,
+                ReportName = "Звіт по нерухомості",
+                Columns = new List<Column>
+                    {
+                        new Column
+                        {
+                            name = "Id",
+                            header = "ID",
+                            type = "number",
+                            align = "right",
+                            format = "",
+                            isGroupBy = false,
+                            Group = "HomeInfo"
+                        },
+                        new Column
+                        {
+                            name = "Name",
+                            header = "Назва об'єкта",
+                            type = "string",
+                            align = "left",
+                            format = "",
+                            isGroupBy = false,
+                            Group = "HomeInfo"
+                        },
+                        new Column
+                        {
+                            name = "Address",
+                            header = "Адреса",
+                            type = "string",
+                            align = "left",
+                            format = "",
+                            isGroupBy = false,
+                            Group = "HomePlace"
+                        },
+                        new Column
+                        {
+                            name = "City",
+                            header = "Місто",
+                            type = "string",
+                            align = "left",
+                            format = "",
+                            isGroupBy = true,
+                            Group = "HomePlace"
+                        },
+                        new Column
+                        {
+                            name = "Region",
+                            header = "Область",
+                            type = "string",
+                            align = "left",
+                            format = "",
+                            isGroupBy = false,
+                            Group = "HomePlace"
+                        }
+                    }
+            };
+
+        report.Columns.OrderBy(c => c.Group);
+
+        foreach (var item in report.Columns)
+        {
+            if (item.isGroupBy)
+            {
+                groupColumns.Add(item.name);
+            }
+        }
+
+        homes.AddRange(new[]
+        {
+                new HomeModel()
+                {
+                    Id = 1,
+                    Address = "вул. Центральна, 10",
+                    City = "Київ",
+                    Name = "Котедж 'Сонячний'",
+                    Region = "Київська область"
+                },
+                new HomeModel()
+                {
+                    Id = 2,
+                    Address = "вул. Хрещатик, 25",
+                    City = "Київ",
+                    Name = "Бізнес-центр 'Престиж'",
+                    Region = "Київська область"
+                },
+                new HomeModel()
+                {
+                    Id = 3,
+                    Address = "вул. Лісова, 7",
+                    City = "Київ",
+                    Name = "ЖК 'Зелені Алеї'",
+                    Region = "Київська область"
+                },
+                new HomeModel()
+                {
+                    Id = 4,
+                    Address = "пр. Перемоги, 42",
+                    City = "Київ",
+                    Name = "ЖК 'Нова Хвиля'",
+                    Region = "Київська область"
+                },
+                new HomeModel()
+                {
+                    Id = 5,
+                    Address = "вул. Богдана Хмельницького, 15",
+                    City = "Київ",
+                    Name = "Історична будівля",
+                    Region = "Київська область"
+                },
+
+                new HomeModel()
+                {
+                    Id = 6,
+                    Address = "вул. Гагаріна, 25",
+                    City = "Львів",
+                    Name = "Квартира у центрі",
+                    Region = "Львівська область"
+                },
+                new HomeModel()
+                {
+                    Id = 7,
+                    Address = "пл. Ринок, 12",
+                    City = "Львів",
+                    Name = "Старовинна кам'яниця",
+                    Region = "Львівська область"
+                },
+                new HomeModel()
+                {
+                    Id = 8,
+                    Address = "вул. Франка, 8",
+                    City = "Львів",
+                    Name = "Лофт-простір",
+                    Region = "Львівська область"
+                },
+
+                new HomeModel()
+                {
+                    Id = 9,
+                    Address = "вул. Дерибасівська, 15",
+                    City = "Одеса",
+                    Name = "Будинок з ліпниною",
+                    Region = "Одеська область"
+                },
+                new HomeModel()
+                {
+                    Id = 10,
+                    Address = "вул. Приморська, 3",
+                    City = "Одеса",
+                    Name = "Вид на море",
+                    Region = "Одеська область"
+                },
+
+                new HomeModel()
+                {
+                    Id = 11,
+                    Address = "вул. Сумська, 30",
+                    City = "Харків",
+                    Name = "Сталінська висотка",
+                    Region = "Харківська область"
+                },
+                new HomeModel()
+                {
+                    Id = 12,
+                    Address = "пр. Науки, 45",
+                    City = "Харків",
+                    Name = "Сучасний житловий комплекс",
+                    Region = "Харківська область"
+                },
+                new HomeModel()
+                {
+                    Id = 13,
+                    Address = "вул. Пушкінська, 72",
+                    City = "Харків",
+                    Name = "Відреставрована будівля",
+                    Region = "Харківська область"
+                },
+
+                new HomeModel()
+                {
+                    Id = 14,
+                    Address = "пр. Дмитра Яворницького, 100",
+                    City = "Дніпро",
+                    Name = "ЖК 'Річковий'",
+                    Region = "Дніпропетровська область"
+                },
+                new HomeModel()
+                {
+                    Id = 15,
+                    Address = "вул. Набережна Перемоги, 25",
+                    City = "Дніпро",
+                    Name = "Апартаменти з видом на Дніпро",
+                    Region = "Дніпропетровська область"
+                }
+            });
+    }
+
+    private bool IsShown(string name)
+    {
+        foreach(var item in selectedView.Settings)
+        {
+            if (item==name)
+            {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private void OnViewChanged()
+    {
+        selectedView = Views.FirstOrDefault(v => v.Id == selectedViewId);
+        homes = new List<HomeModel>(homes);
+        StateHasChanged();
+    }
+
+    private async Task OnClick()
+    {
+        isVisible = !isVisible;
+        StateHasChanged();
+    }
+
+    private ColumnType GetColumnType(string type)
+    {
+        return type switch
+        {
+            "number" => ColumnType.Number,
+            "date" => ColumnType.DateTime,
+            "boolean" => ColumnType.Boolean,
+            _ => ColumnType.String
+        };
+    }
+    
+    private TextAlign GetTextAlign(string align)
+    {
+        return align switch
+        {
+            "right" => TextAlign.Right,
+            "center" => TextAlign.Center,
+            _ => TextAlign.Left
+        };
+    }
+}
