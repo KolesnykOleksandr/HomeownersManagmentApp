@@ -6,6 +6,20 @@
         public string ReportName { get; set; }
         public List<Column> Columns { get; set; }
 
+        public List<string> ColumnsString
+        {
+            get
+            {
+                List<string> list = new List<string>();
+
+                foreach (var column in Columns)
+                {
+                    list.Add(column.name);
+                }
+
+                return list;
+            }
+        }
     }
 
     public class Column

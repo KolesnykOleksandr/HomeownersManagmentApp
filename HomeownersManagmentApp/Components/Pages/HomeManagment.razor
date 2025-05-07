@@ -3,17 +3,111 @@
 @using HomeownersManagmentApp.Models
 @using Syncfusion.Blazor.DropDowns
 @using Syncfusion.Blazor.Grids
+@using Syncfusion.Blazor.Buttons
+@using Syncfusion.Blazor.Inputs
+@using Syncfusion.Blazor.Popups
+@using Syncfusion.Blazor.Lists
+
 @rendermode InteractiveAuto
 
 <h3>Home Management</h3>
 
-<SfDropDownList TValue="Guid" TItem="View"
-                Placeholder="Select a view"
-                DataSource="@Views"
-                @bind-Value="selectedViewId"
-                Width="300px">
-    <DropDownListFieldSettings Value="Id" Text="Name"></DropDownListFieldSettings>
-</SfDropDownList>
+<div style="display: flex; gap: 10px; f lex-wrap: wrap; margin-bottom: 10px">
+    <div style="position: relative; display: inline-block;">
+        <img src="https://static-00.iconduck.com/assets.00/filter-icon-512x512-v9trade2.png"
+             style="
+            position: absolute;
+            top: 7px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 20px;
+            height: 20px;
+            pointer-events:none;
+            z-index:1000;"
+             alt="Filter" />
+
+        <SfMultiSelect CssClass="hide-selected"
+            Width="25px"
+            TValue="List<string>"
+            TItem="string"
+            PopupWidth="300px"
+            @bind-Value="selectedView.Settings"
+            OnBlur="@ChangeViewSettings"
+            DataSource="@report.ColumnsString"
+            ShowClearButton="false"
+            Mode="VisualMode.CheckBox"
+            EnableSelectionOrder="false">
+        </SfMultiSelect>
+    </div>
+
+            <div style="width: 200px; gap: 3px display:flex">
+            @if (!isEditingViewName)
+                {
+                     <div onclick="@StartViewNameEditing">
+                        <SfDropDownList
+                            @key = "Views.Count"   
+                            TValue="Guid"
+                            TItem="View"
+                            Placeholder="Select a view"
+                            DataSource="@Views"
+                            @bind-Value="selectedViewId">
+                            <DropDownListFieldSettings Value="Id" Text="Name"></DropDownListFieldSettings>
+                                <DropDownListEvents TItem="View" TValue="Guid"></DropDownListEvents>
+                        </SfDropDownList>
+                    </div>
+                }
+            @if (isEditingViewName)
+                {
+                    <div style="display:flex; gap:3px"> 
+                        <SfTextBox 
+                            @bind-Value="editingViewName"
+                            @ref="textBoxRef"
+                            OnBlur="@SaveViewNameEdit">
+                        </SfTextBox>
+                        <button @onclick="CancelViewNameEdit" style="background-color:white" clas="e-small cancel-btn">❌</button>
+                    </div>
+                }
+            </div>
+
+    <button class="add-button" onclick="@AddButtonClick">
+        Add
+    </button>
+
+    <button class="delete-button" onclick="@DeleteButtonClick">
+        Delete
+    </button>
+
+    @if (isAddButtonClicked)
+    {
+        <SfTextBox 
+            @bind-Value = "viewName"
+            Width="200px"
+            CssClass="text-box">
+        </SfTextBox>
+    
+        <button class="save-button" onclick="@SaveButtonClick">
+            Save
+        </button>
+
+        <button class="delete-button" onclick="@CancelButtonClick">
+            Cancel
+        </button>
+    }
+</div>
+
+@if (deleteConfirmation)
+{
+    <SfDialog Width="300px" IsModal="true" ShowCloseIcon="true">
+        <DialogTemplates>
+            <Header> Delete Confirmation</Header>
+            <Content> Are you sure, you want to delete view @selectedView.Name? </Content>
+        </DialogTemplates>
+        <DialogButtons>
+            <DialogButton Content="Yes" IsPrimary="true" OnClick="@OnConfirmDelete" />
+            <DialogButton Content="No" OnClick="@OnCancelDelete" />
+        </DialogButtons>
+    </SfDialog>
+}
 
 <div style="max-width:1000px; height: 480px">
     <SfGrid DataSource="@homes"
@@ -25,6 +119,7 @@
             GridLines="GridLine.Both">
         <GridFilterSettings Type="Syncfusion.Blazor.Grids.FilterType.Menu"></GridFilterSettings>
         <GridGroupSettings Columns="@groupColumns.ToArray()"></GridGroupSettings>
+
         <GridColumns>
             @foreach (var prop in report.Columns)
                 {
@@ -35,12 +130,50 @@
                         Width="150"
                         Format="@prop.format"
                         Visible="@IsShown(prop.name)">
-                    @* Visible="@isVisible"> *@
                     </GridColumn>
             }
         </GridColumns>
     </SfGrid>
 </div>
+
+<style>
+    .e-delim-values
+    {
+        display: none !important;
+    }
+
+    .e-multi-select-wrapper {
+        padding: 0 !important;
+        min-width: 40px !important;
+        display: flex !important;
+        align-items: center !important;
+        justify-content: center !important;
+    }
+
+    .button{
+
+    }
+
+    .add-button {
+        background-color: green;
+        color: white;
+    }
+
+    .delete-button {
+        background-color: Red;
+        color: white;
+    }
+
+    .save-button {
+        background-color: blue;
+        color: white;
+    }
+
+    .text-box {
+        margin-left: 5px;
+        margin-bottom: 5px;
+    }
+</style>
 
 @code   
 {
@@ -48,11 +181,14 @@
     private List<HomeModel> homes = new List<HomeModel>();
     private List<View> Views = null;
 
-
     private ReportModel report = null;
     private IViewService _viewService;
 
-    private bool isVisible = true; 
+    private bool isVisible = true;
+    private bool isAddButtonClicked = false;
+    private bool deleteConfirmation = false;
+    private string viewName = "";
+
     private Guid _selectedViewId;
     private Guid selectedViewId
     {
@@ -66,9 +202,8 @@
             }
         }
     }
+
     private View selectedView;
-
-
 
     public HomeManagment(IViewService viewService)
     {
@@ -279,28 +414,131 @@
             });
     }
 
+    private void AddButtonClick()
+    {
+        isAddButtonClicked = true;
+        StateHasChanged();
+    }
+
+    private void ChangeViewSettings()
+    {
+        _viewService.UpdateView(selectedView);
+    }
+
+    private void DeleteButtonClick()
+    {
+        deleteConfirmation = true;
+        StateHasChanged();
+    }
+
+    private void OnConfirmDelete()
+    {
+        deleteConfirmation = false;
+        _viewService.DeleteView(selectedViewId);
+
+        int currentIndex = Views.IndexOf(selectedView);
+        Views.Remove(selectedView);
+
+        Views = new List<View>(Views);
+
+        if (Views.Count > 0)
+        {
+            selectedView = currentIndex > 0 ? Views[currentIndex - 1] : Views[0];
+            selectedViewId = selectedView.Id;
+        }
+        else
+        {
+            selectedView = null;
+            selectedViewId = Guid.Empty;
+        }
+
+        StateHasChanged();
+    }
+
+    private void OnCancelDelete()
+    {
+        deleteConfirmation = false;
+        StateHasChanged();
+    }
+    private void SaveButtonClick()
+    {
+        isAddButtonClicked = false;
+        View view = new View() { Name = viewName, Settings = selectedView.Settings };
+        viewName = string.Empty;
+        _viewService.CreateView(view);
+        Views.Add(view);
+        selectedView = view;
+        selectedViewId = view.Id;
+        StateHasChanged();
+    }
+
+    private void CancelButtonClick()
+    {
+        isAddButtonClicked = false;
+        StateHasChanged();
+    }
+
     private bool IsShown(string name)
     {
-        foreach(var item in selectedView.Settings)
+        if (selectedView.Settings != null)
         {
-            if (item==name)
+            foreach (var item in selectedView.Settings)
             {
-                return true;
+                if (item == name)
+                {
+                    return true;
+                }
             }
         }
         return false;
+    }
+
+    private SfTextBox textBoxRef;
+    private bool clicked = false;
+    private bool isEditingViewName = false;
+    private string editingViewName;
+
+
+    private async Task StartViewNameEditing()
+    {
+        if (clicked)
+        {
+            clicked = false;
+            editingViewName = string.Concat(selectedView.Name);
+            isEditingViewName = true;
+        }
+        else
+        {
+            clicked = true;
+            await Task.Delay(200);
+            clicked = false;
+        }
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (isEditingViewName && textBoxRef != null)
+        {
+            await textBoxRef.FocusAsync();
+        }
+    }
+
+    private void SaveViewNameEdit()
+    {
+        selectedView.Name = editingViewName;
+        isEditingViewName = false;
+        _viewService.UpdateView(selectedView);
+    }
+
+    private void CancelViewNameEdit()
+    {
+        isEditingViewName = false;
     }
 
     private void OnViewChanged()
     {
         selectedView = Views.FirstOrDefault(v => v.Id == selectedViewId);
         homes = new List<HomeModel>(homes);
-        StateHasChanged();
-    }
-
-    private async Task OnClick()
-    {
-        isVisible = !isVisible;
         StateHasChanged();
     }
 

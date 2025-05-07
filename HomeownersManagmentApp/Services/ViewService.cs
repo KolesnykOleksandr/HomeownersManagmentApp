@@ -34,7 +34,19 @@ namespace HomeownersManagmentApp.Services
                 {
                     Id = Guid.NewGuid(),
                     Name = "Second",
-                    Settings = new List<string> {"Id", "Name", "City", "Region "}
+                    Settings = new List<string> {"Id", "Name", "City", "Region"}
+                },
+                new View
+                {
+                    Id = Guid.NewGuid(),
+                    Name = "Third",
+                    Settings = new List<string> {"Id", "Name"}
+                },
+                new View
+                {
+                    Id = Guid.NewGuid(),
+                    Name = "Fourth",
+                    Settings = new List<string> {"Id", "Name", "City", "Region", "Address"}
                 }
             };
             return views;
