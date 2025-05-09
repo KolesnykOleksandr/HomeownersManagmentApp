@@ -13,91 +13,88 @@
 <h3>Home Management</h3>
 
 <div style="display: flex; gap: 10px; f lex-wrap: wrap; margin-bottom: 10px">
-    <div style="position: relative; display: inline-block;">
-        <img src="https://static-00.iconduck.com/assets.00/filter-icon-512x512-v9trade2.png"
-             style="
-            position: absolute;
-            top: 7px;
-            left: 50%;
-            transform: translateX(-50%);
-            width: 20px;
-            height: 20px;
-            pointer-events:none;
-            z-index:1000;"
-             alt="Filter" />
 
-        <SfMultiSelect CssClass="hide-selected"
-            Width="25px"
-            TValue="List<string>"
-            TItem="string"
-            PopupWidth="300px"
-            @bind-Value="selectedView.Settings"
-            OnBlur="@ChangeViewSettings"
-            DataSource="@report.ColumnsString"
-            ShowClearButton="false"
-            Mode="VisualMode.CheckBox"
-            EnableSelectionOrder="false">
-        </SfMultiSelect>
-    </div>
-
-            <div style="width: 200px; gap: 3px display:flex">
-            @if (!isEditingViewName)
-                {
-                     <div onclick="@StartViewNameEditing">
-                        <SfDropDownList
-                            @key = "Views.Count"   
-                            TValue="Guid"
-                            TItem="View"
-                            Placeholder="Select a view"
-                            DataSource="@Views"
-                            @bind-Value="selectedViewId">
-                            <DropDownListFieldSettings Value="Id" Text="Name"></DropDownListFieldSettings>
-                                <DropDownListEvents TItem="View" TValue="Guid"></DropDownListEvents>
-                        </SfDropDownList>
-                    </div>
-                }
-            @if (isEditingViewName)
-                {
-                    <div style="display:flex; gap:3px"> 
-                        <SfTextBox 
-                            @bind-Value="editingViewName"
-                            @ref="textBoxRef"
-                            OnBlur="@SaveViewNameEdit">
-                        </SfTextBox>
-                        <button @onclick="CancelViewNameEdit" style="background-color:white" clas="e-small cancel-btn">❌</button>
-                    </div>
-                }
-            </div>
-
+    <SfDropDownList
+        @ref = "viewDropDownList"
+        Width="300px"
+        @key = "selectedViewId"   
+        TValue="Guid"
+        TItem="View"
+        Placeholder="Select a view"
+        DataSource="@Views"
+        @bind-Value="selectedViewId">
+        <DropDownListFieldSettings Value="Id" Text="Name"></DropDownListFieldSettings>
+            <DropDownListEvents TItem="View" TValue="Guid"></DropDownListEvents>
+    </SfDropDownList>
+    
+    
     <button class="add-button" onclick="@AddButtonClick">
         Add
+    </button>
+
+    <button class="update-button" onclick="@UpdateButtonClick">
+        Update
     </button>
 
     <button class="delete-button" onclick="@DeleteButtonClick">
         Delete
     </button>
 
-    @if (isAddButtonClicked)
+    @if(isAddButtonClicked || isUpdateButtonClicked)
     {
-        <SfTextBox 
-            @bind-Value = "viewName"
-            Width="200px"
-            CssClass="text-box">
-        </SfTextBox>
-    
-        <button class="save-button" onclick="@SaveButtonClick">
-            Save
-        </button>
+        <SfDialog Width="400px" IsModal="true" ShowCloseIcon="true">
+            <DialogTemplates>
+                <Header> View </Header>
+                <Content>
+                    <div style="display: flex; flex-direction: column; gap: 15px; padding: 10px;">
+                        <div style="display: flex; align-items: center;">
+                            <label style="width: 100px;">Name:</label>
+                            <SfTextBox Width="250px" @bind-value = "changingView.Name"></SfTextBox>
+                        </div>
 
-        <button class="delete-button" onclick="@CancelButtonClick">
-            Cancel
-        </button>
+                        <div style="display: flex; align-items: center;">
+                            <label style="width: 100px;">Settings:</label>
+                            <div style="position: relative; display: inline-block;">
+                                <img src="https://static-00.iconduck.com/assets.00/filter-icon-512x512-v9trade2.png"
+                                     style="
+                                     position: absolute;
+                                     top: 7px;
+                                     left: 50%;
+                                     transform: translateX(-50%);
+                                     width: 20px;
+                                     height: 20px;
+                                     pointer-events:none;
+                                     z-index:1000;"
+                                     alt="Filter" />
+
+                                <SfMultiSelect CssClass="hide-selected"
+                                               Width="25px"
+                                               TValue="List<string>"
+                                               TItem="string"
+                                               PopupWidth="300px"
+                                               @bind-Value="changingView.Settings"
+                                               DataSource="@report.ColumnsString"
+                                               ShowClearButton="false"
+                                               Mode="VisualMode.CheckBox"
+                                               EnableSelectionOrder="false">
+                                </SfMultiSelect>
+                            </div>
+                        </div>
+                    </div>
+                </Content>
+            </DialogTemplates>
+            <DialogButtons>
+                <DialogButton Content="Save" IsPrimary="true" OnClick="@SaveButtonClick" />
+                <DialogButton Content="Cancel" OnClick="@CancelButtonClick" />
+            </DialogButtons>
+        </SfDialog>
     }
+    
 </div>
 
 @if (deleteConfirmation)
 {
-    <SfDialog Width="300px" IsModal="true" ShowCloseIcon="true">
+    <SfDialog Width="300px" IsModal="true">
         <DialogTemplates>
             <Header> Delete Confirmation</Header>
             <Content> Are you sure, you want to delete view @selectedView.Name? </Content>
@@ -120,19 +117,27 @@
         <GridFilterSettings Type="Syncfusion.Blazor.Grids.FilterType.Menu"></GridFilterSettings>
         <GridGroupSettings Columns="@groupColumns.ToArray()"></GridGroupSettings>
 
-        <GridColumns>
-            @foreach (var prop in report.Columns)
+<GridColumns>
+    @foreach (var group in report.ColumnGroups)
+    {
+        <GridColumn HeaderText="@group.Name">
+            <GridColumns>
+                @foreach (var prop in group.Columns)
                 {
                     <GridColumn Field="@prop.name"
-                        IsPrimaryKey="@(prop.name=="Id")"
-                        HeaderText="@prop.header"
-                        Type="@GetColumnType(prop.type)"
-                        Width="150"
-                        Format="@prop.format"
-                        Visible="@IsShown(prop.name)">
+                                IsPrimaryKey="@(prop.name=="Id")"
+                                HeaderText="@prop.header"
+                                Type="@GetColumnType(prop.type)"
+                                Width="150"
+                                Format="@prop.format"
+                                Visible="@IsShown(prop.name)"
+                                TextAlign="@GetTextAlign(prop.align)">
                     </GridColumn>
-            }
-        </GridColumns>
+                }
+            </GridColumns>
+        </GridColumn>
+    }
+</GridColumns>
     </SfGrid>
 </div>
 
@@ -153,9 +158,14 @@
     .button{
 
     }
-
+    
     .add-button {
         background-color: green;
+        color: white;
+    }
+
+    .update-button {
+        background-color: darkorange;
         color: white;
     }
 
@@ -183,11 +193,14 @@
 
     private ReportModel report = null;
     private IViewService _viewService;
+    private SfDropDownList<Guid,View> viewDropDownList;
 
-    private bool isVisible = true;
     private bool isAddButtonClicked = false;
+    private bool isUpdateButtonClicked = false;
     private bool deleteConfirmation = false;
-    private string viewName = "";
+
+    private View selectedView;
+    private View changingView;
 
     private Guid _selectedViewId;
     private Guid selectedViewId
@@ -202,8 +215,6 @@
             }
         }
     }
-
-    private View selectedView;
 
     public HomeManagment(IViewService viewService)
     {
@@ -220,8 +231,12 @@
             {
                 ReportId = 1,
                 ReportName = "Звіт по нерухомості",
-                Columns = new List<Column>
+                ColumnGroups = new List<ColumnGroup>
                     {
+                        new ColumnGroup
+                        {
+                            Name = "Main information",
+                            Columns = new List<Column>{
                         new Column
                         {
                             name = "Id",
@@ -229,8 +244,7 @@
                             type = "number",
                             align = "right",
                             format = "",
-                            isGroupBy = false,
-                            Group = "HomeInfo"
+                            isGroupBy = false
                         },
                         new Column
                         {
@@ -239,18 +253,24 @@
                             type = "string",
                             align = "left",
                             format = "",
-                            isGroupBy = false,
-                            Group = "HomeInfo"
+                            isGroupBy = false
+                        }
+                            }
                         },
-                        new Column
+                        new ColumnGroup
+                        {
+                            Name = "Placement information",
+                            Columns = new List<Column>
+                            {
+
+                            new Column
                         {
                             name = "Address",
                             header = "Адреса",
                             type = "string",
                             align = "left",
                             format = "",
-                            isGroupBy = false,
-                            Group = "HomePlace"
+                            isGroupBy = false
                         },
                         new Column
                         {
@@ -259,8 +279,7 @@
                             type = "string",
                             align = "left",
                             format = "",
-                            isGroupBy = true,
-                            Group = "HomePlace"
+                            isGroupBy = true
                         },
                         new Column
                         {
@@ -269,21 +288,13 @@
                             type = "string",
                             align = "left",
                             format = "",
-                            isGroupBy = false,
-                            Group = "HomePlace"
+                            isGroupBy = false
                         }
+                            }
+                        }
+
                     }
             };
-
-        report.Columns.OrderBy(c => c.Group);
-
-        foreach (var item in report.Columns)
-        {
-            if (item.isGroupBy)
-            {
-                groupColumns.Add(item.name);
-            }
-        }
 
         homes.AddRange(new[]
         {
@@ -417,12 +428,15 @@
     private void AddButtonClick()
     {
         isAddButtonClicked = true;
+        changingView = new View();
         StateHasChanged();
     }
 
-    private void ChangeViewSettings()
+    private void UpdateButtonClick()
     {
-        _viewService.UpdateView(selectedView);
+        isUpdateButtonClicked = true;
+        changingView = new View(selectedView);
+        StateHasChanged();
     }
 
     private void DeleteButtonClick()
@@ -460,21 +474,46 @@
         deleteConfirmation = false;
         StateHasChanged();
     }
-    private void SaveButtonClick()
-    {
-        isAddButtonClicked = false;
-        View view = new View() { Name = viewName, Settings = selectedView.Settings };
-        viewName = string.Empty;
-        _viewService.CreateView(view);
-        Views.Add(view);
-        selectedView = view;
-        selectedViewId = view.Id;
-        StateHasChanged();
-    }
+
+        private void SaveButtonClick()
+        {
+            if (isAddButtonClicked)
+            {
+                selectedView = changingView;
+                _viewService.CreateView(selectedView);
+                Views.Add(selectedView);
+            }
+            else if (isUpdateButtonClicked)
+            {
+                selectedView.Name = changingView.Name;
+                selectedView.Settings = changingView.Settings;
+                _viewService.UpdateView(selectedView);
+
+                var index = Views.FindIndex(v => v.Id == selectedView.Id);
+                if (index >= 0)
+                {
+                    Views[index] = selectedView;
+                }
+            }
+
+            Views = new List<View>(Views);
+            selectedViewId = selectedView.Id;
+
+            isAddButtonClicked = false;
+            isUpdateButtonClicked = false;
+            changingView = null;
+
+            viewDropDownList.RefreshDataAsync();
+            StateHasChanged();
+        }
+
 
     private void CancelButtonClick()
     {
         isAddButtonClicked = false;
+        isUpdateButtonClicked = false;
+        changingView = null;
+
         StateHasChanged();
     }
 
@@ -491,48 +530,6 @@
             }
         }
         return false;
-    }
-
-    private SfTextBox textBoxRef;
-    private bool clicked = false;
-    private bool isEditingViewName = false;
-    private string editingViewName;
-
-
-    private async Task StartViewNameEditing()
-    {
-        if (clicked)
-        {
-            clicked = false;
-            editingViewName = string.Concat(selectedView.Name);
-            isEditingViewName = true;
-        }
-        else
-        {
-            clicked = true;
-            await Task.Delay(200);
-            clicked = false;
-        }
-    }
-
-    protected override async Task OnAfterRenderAsync(bool firstRender)
-    {
-        if (isEditingViewName && textBoxRef != null)
-        {
-            await textBoxRef.FocusAsync();
-        }
-    }
-
-    private void SaveViewNameEdit()
-    {
-        selectedView.Name = editingViewName;
-        isEditingViewName = false;
-        _viewService.UpdateView(selectedView);
-    }
-
-    private void CancelViewNameEdit()
-    {
-        isEditingViewName = false;
     }
 
     private void OnViewChanged()

@@ -4,7 +4,7 @@
     {
         public int ReportId { get; set; }
         public string ReportName { get; set; }
-        public List<Column> Columns { get; set; }
+        public List<ColumnGroup> ColumnGroups { get; set; }
 
         public List<string> ColumnsString
         {
@@ -12,14 +12,23 @@
             {
                 List<string> list = new List<string>();
 
-                foreach (var column in Columns)
+                foreach (var columnGroup in ColumnGroups)
                 {
-                    list.Add(column.name);
+                    foreach (var column in columnGroup.Columns)
+                    {
+                        list.Add(column.name);
+                    }
                 }
 
                 return list;
             }
         }
+    }
+
+    public class ColumnGroup
+    {
+        public string Name { get; set; }
+        public List<Column> Columns { get; set; }
     }
 
     public class Column
@@ -30,6 +39,5 @@
         public string align { get; set; }
         public string format { get; set; }
         public bool isGroupBy { get; set; }
-        public string Group { get; set; }
     }
 }
