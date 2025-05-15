@@ -7,6 +7,7 @@
 @using Syncfusion.Blazor.Inputs
 @using Syncfusion.Blazor.Popups
 @using Syncfusion.Blazor.Lists
+@using System.Dynamic;
 
 @rendermode InteractiveAuto
 
@@ -107,7 +108,7 @@
 }
 
 <div style="max-width:1000px; height: 480px">
-    <SfGrid DataSource="@homes"
+    <SfGrid DataSource="@datasource"
             AllowSorting="true"
             AllowGrouping="true"
             AllowFiltering="true"
@@ -188,7 +189,8 @@
 @code   
 {
     private List<string> groupColumns = new List<string>();
-    private List<HomeModel> homes = new List<HomeModel>();
+    private ReportSnapshot reportSnapshot;
+    private List<ExpandoObject> datasource;
     private List<View> Views = null;
 
     private ReportModel report = null;
@@ -296,133 +298,9 @@
                     }
             };
 
-        homes.AddRange(new[]
-        {
-                new HomeModel()
-                {
-                    Id = 1,
-                    Address = "вул. Центральна, 10",
-                    City = "Київ",
-                    Name = "Котедж 'Сонячний'",
-                    Region = "Київська область"
-                },
-                new HomeModel()
-                {
-                    Id = 2,
-                    Address = "вул. Хрещатик, 25",
-                    City = "Київ",
-                    Name = "Бізнес-центр 'Престиж'",
-                    Region = "Київська область"
-                },
-                new HomeModel()
-                {
-                    Id = 3,
-                    Address = "вул. Лісова, 7",
-                    City = "Київ",
-                    Name = "ЖК 'Зелені Алеї'",
-                    Region = "Київська область"
-                },
-                new HomeModel()
-                {
-                    Id = 4,
-                    Address = "пр. Перемоги, 42",
-                    City = "Київ",
-                    Name = "ЖК 'Нова Хвиля'",
-                    Region = "Київська область"
-                },
-                new HomeModel()
-                {
-                    Id = 5,
-                    Address = "вул. Богдана Хмельницького, 15",
-                    City = "Київ",
-                    Name = "Історична будівля",
-                    Region = "Київська область"
-                },
+        reportSnapshot =_viewService.GetSnapshot().Result;
+        datasource = reportSnapshot.Report();
 
-                new HomeModel()
-                {
-                    Id = 6,
-                    Address = "вул. Гагаріна, 25",
-                    City = "Львів",
-                    Name = "Квартира у центрі",
-                    Region = "Львівська область"
-                },
-                new HomeModel()
-                {
-                    Id = 7,
-                    Address = "пл. Ринок, 12",
-                    City = "Львів",
-                    Name = "Старовинна кам'яниця",
-                    Region = "Львівська область"
-                },
-                new HomeModel()
-                {
-                    Id = 8,
-                    Address = "вул. Франка, 8",
-                    City = "Львів",
-                    Name = "Лофт-простір",
-                    Region = "Львівська область"
-                },
-
-                new HomeModel()
-                {
-                    Id = 9,
-                    Address = "вул. Дерибасівська, 15",
-                    City = "Одеса",
-                    Name = "Будинок з ліпниною",
-                    Region = "Одеська область"
-                },
-                new HomeModel()
-                {
-                    Id = 10,
-                    Address = "вул. Приморська, 3",
-                    City = "Одеса",
-                    Name = "Вид на море",
-                    Region = "Одеська область"
-                },
-
-                new HomeModel()
-                {
-                    Id = 11,
-                    Address = "вул. Сумська, 30",
-                    City = "Харків",
-                    Name = "Сталінська висотка",
-                    Region = "Харківська область"
-                },
-                new HomeModel()
-                {
-                    Id = 12,
-                    Address = "пр. Науки, 45",
-                    City = "Харків",
-                    Name = "Сучасний житловий комплекс",
-                    Region = "Харківська область"
-                },
-                new HomeModel()
-                {
-                    Id = 13,
-                    Address = "вул. Пушкінська, 72",
-                    City = "Харків",
-                    Name = "Відреставрована будівля",
-                    Region = "Харківська область"
-                },
-
-                new HomeModel()
-                {
-                    Id = 14,
-                    Address = "пр. Дмитра Яворницького, 100",
-                    City = "Дніпро",
-                    Name = "ЖК 'Річковий'",
-                    Region = "Дніпропетровська область"
-                },
-                new HomeModel()
-                {
-                    Id = 15,
-                    Address = "вул. Набережна Перемоги, 25",
-                    City = "Дніпро",
-                    Name = "Апартаменти з видом на Дніпро",
-                    Region = "Дніпропетровська область"
-                }
-            });
     }
 
     private void AddButtonClick()
@@ -475,37 +353,37 @@
         StateHasChanged();
     }
 
-        private void SaveButtonClick()
+    private void SaveButtonClick()
+    {
+        if (isAddButtonClicked)
         {
-            if (isAddButtonClicked)
-            {
-                selectedView = changingView;
-                _viewService.CreateView(selectedView);
-                Views.Add(selectedView);
-            }
-            else if (isUpdateButtonClicked)
-            {
-                selectedView.Name = changingView.Name;
-                selectedView.Settings = changingView.Settings;
-                _viewService.UpdateView(selectedView);
-
-                var index = Views.FindIndex(v => v.Id == selectedView.Id);
-                if (index >= 0)
-                {
-                    Views[index] = selectedView;
-                }
-            }
-
-            Views = new List<View>(Views);
-            selectedViewId = selectedView.Id;
-
-            isAddButtonClicked = false;
-            isUpdateButtonClicked = false;
-            changingView = null;
-
-            viewDropDownList.RefreshDataAsync();
-            StateHasChanged();
+            selectedView = changingView;
+            _viewService.CreateView(selectedView);
+            Views.Add(selectedView);
         }
+        else if (isUpdateButtonClicked)
+        {
+            selectedView.Name = changingView.Name;
+            selectedView.Settings = changingView.Settings;
+            _viewService.UpdateView(selectedView);
+
+            var index = Views.FindIndex(v => v.Id == selectedView.Id);
+            if (index >= 0)
+            {
+                Views[index] = selectedView;
+            }
+        }
+
+        Views = new List<View>(Views);
+        selectedViewId = selectedView.Id;
+
+        isAddButtonClicked = false;
+        isUpdateButtonClicked = false;
+        changingView = null;
+
+        viewDropDownList.RefreshDataAsync();
+        StateHasChanged();
+    }
 
 
     private void CancelButtonClick()
@@ -535,7 +413,8 @@
     private void OnViewChanged()
     {
         selectedView = Views.FirstOrDefault(v => v.Id == selectedViewId);
-        homes = new List<HomeModel>(homes);
+        //homes = new List<HomeModel>(homes);
+        datasource = reportSnapshot.Report();
         StateHasChanged();
     }
 

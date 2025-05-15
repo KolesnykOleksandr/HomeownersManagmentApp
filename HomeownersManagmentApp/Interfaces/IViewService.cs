@@ -8,6 +8,7 @@ namespace HomeownersManagmentApp.Interfaces
         public Task UpdateView(View view);
         public Task DeleteView(Guid viewId);
         public Task<List<View>> GetViews(Guid userId);
+        public Task<ReportSnapshot> GetSnapshot();
 
     }
 }
