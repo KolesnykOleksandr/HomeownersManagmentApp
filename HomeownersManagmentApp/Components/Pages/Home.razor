@@ -1,8 +1,6 @@
 ﻿@page "/"
 @using Syncfusion.Blazor.Charts
 @using System.Globalization
-@using System.Timers
-@implements IDisposable
 
 <SfChart @ref="chart" Width="900px" Height="500px">
     <ChartPrimaryXAxis ValueType="Syncfusion.Blazor.Charts.ValueType.DateTime" 
@@ -83,9 +81,7 @@
 
 @code {
     private SfChart chart;
-    private Timer dataTimer;
     private Random random = new Random();
-    private DateTime lastCandleTime;
 
     public class Data
     {
@@ -109,109 +105,24 @@
 
     protected override async Task OnInitializedAsync()
     {
-        await GenerateInitialStockData();
-        InitializeTimer();
+        Generate1000Candles();
         await base.OnInitializedAsync();
     }
 
-    private void InitializeTimer()
+    private void Generate1000Candles()
     {
-        dataTimer = new Timer(1000); // 1 секунда
-        dataTimer.Elapsed += async (sender, e) => await AddNewCandle();
-        dataTimer.AutoReset = true;
-        dataTimer.Start();
-    }
-
-    private async Task AddNewCandle()
-    {
-        await InvokeAsync(async () =>
-        {
-            if (StockDetails.Count > 0)
-            {
-                var lastCandle = StockDetails.Last();
-                lastCandleTime = lastCandle.X.AddMinutes(5);
-
-                // Генеруємо нову свічку зміною в межах ±0.5
-                var change = (random.NextDouble() - 0.5); // від -0.5 до +0.5
-
-                var open = lastCandle.Close;
-                var close = open + change;
-
-                // Забезпечуємо, щоб ціна залишалася в районі 100
-                if (close < 95) close = 95 + random.NextDouble() * 2;
-                if (close > 105) close = 105 - random.NextDouble() * 2;
-
-                // Визначаємо high і low
-                var minChange = Math.Abs(change) * 0.3;
-                var maxChange = Math.Abs(change) * 0.7;
-
-                var high = Math.Max(open, close) + minChange + (random.NextDouble() * maxChange);
-                var low = Math.Min(open, close) - minChange - (random.NextDouble() * maxChange);
-
-                high = Math.Max(high, low + 0.01);
-
-                var newCandle = new Data
-                    {
-                        X = lastCandleTime,
-                        Open = Math.Round(open, 2),
-                        High = Math.Round(high, 2),
-                        Low = Math.Round(low, 2),
-                        Close = Math.Round(close, 2),
-                        Y = Math.Round((open + high + low + close) / 4, 2)
-                    };
-
-                StockDetails.Add(newCandle);
-
-                // Іноді додаємо сигнали (5% шанс)
-                if (random.NextDouble() < 0.05)
-                {
-                    if (random.NextDouble() < 0.5)
-                    {
-                        BuySignals.Add(new SignalData { X = newCandle.X, Y = newCandle.Low - 1 });
-                    }
-                    else
-                    {
-                        SellSignals.Add(new SignalData { X = newCandle.X, Y = newCandle.High + 1 });
-                    }
-                }
-
-                // Оновлюємо графік
-                StateHasChanged();
-
-                // Автоматично скролимо до останньої свічки
-                await Task.Delay(100);
-                if (chart != null)
-                {
-                    //await chart.RefreshAsync();
-                }
-            }
-        });
-    }
-
-    private async Task GenerateInitialStockData()
-    {
-        var baseDate = DateTime.Today.AddDays(-1);
-
-        // Генеруємо початкові дані з 9:30 до поточного часу
-        var startTime = new DateTime(baseDate.Year, baseDate.Month, baseDate.Day, 9, 30, 0);
+        var startTime = DateTime.Now.AddMinutes(-5 * 100); // 1000 свічок по 5 хвилин
         var currentTime = startTime;
 
         double previousClose = 100.0; // Початкова ціна рівно 100
 
-        while (currentTime <= DateTime.Now)
+        for (int i = 0; i < 1000; i++)
         {
-            // Пропускаємо нічний проміжок (20:00 - 9:30 наступного дня)
-            if (currentTime.TimeOfDay >= TimeSpan.FromHours(20) || currentTime.TimeOfDay < TimeSpan.FromHours(9.5))
-            {
-                currentTime = currentTime.AddMinutes(5);
-                continue;
-            }
-
             // Генеруємо зміну ціни в межах ±0.5
-            var change = (random.NextDouble() - 0.5); // від -0.5 до +0.5
+            var change = (random.NextDouble() - 0.5);
 
             var open = previousClose;
-            var close = open + change; // Додаємо/віднімаємо не більше 0.5
+            var close = open + change;
 
             // Забезпечуємо, щоб ціна залишалася в розумних межах навколо 100
             if (close < 95) close = 95 + random.NextDouble() * 2;
@@ -227,26 +138,33 @@
             // Забезпечуємо, що high > low
             high = Math.Max(high, low + 0.01);
 
-            StockDetails.Add(new Data
+            var newCandle = new Data
+            {
+                X = currentTime,
+                Open = Math.Round(open, 2),
+                High = Math.Round(high, 2),
+                Low = Math.Round(low, 2),
+                Close = Math.Round(close, 2),
+                Y = Math.Round((open + high + low + close) / 4, 2)
+            };
+
+            StockDetails.Add(newCandle);
+
+            // Іноді додаємо сигнали (5% шанс)
+            if (random.NextDouble() < 0.05)
+            {
+                if (random.NextDouble() < 0.5)
                 {
-                    X = currentTime,
-                    Open = Math.Round(open, 2),
-                    High = Math.Round(high, 2),
-                    Low = Math.Round(low, 2),
-                    Close = Math.Round(close, 2),
-                    Y = Math.Round((open + high + low + close) / 4, 2)
-                });
+                    BuySignals.Add(new SignalData { X = newCandle.X, Y = newCandle.Low - 1 });
+                }
+                else
+                {
+                    SellSignals.Add(new SignalData { X = newCandle.X, Y = newCandle.High + 1 });
+                }
+            }
 
             previousClose = close;
             currentTime = currentTime.AddMinutes(5);
         }
-
-        lastCandleTime = StockDetails.Count > 0 ? StockDetails.Last().X : DateTime.Now;
-    }
-
-    public void Dispose()
-    {
-        dataTimer?.Stop();
-        dataTimer?.Dispose();
     }
 }
