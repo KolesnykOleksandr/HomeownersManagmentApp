@@ -11,11 +11,13 @@ builder.Services.AddRazorComponents()
 
 builder.Services.AddSyncfusionBlazor();
 builder.Services.AddSingleton<IViewService, ViewService>();
+builder.Services.AddTelerikBlazor();
 
 var app = builder.Build();
+
 Syncfusion.Licensing.SyncfusionLicenseProvider.RegisterLicense
     (
-    builder.Configuration["Keys:SyncfusionLicense"]
+    "Ngo9BigBOggjHTQxAR8/V1NNaF1cWWhOYVJzWmFZfVtgc19GaFZURGYuP1ZhSXxWdkNiXH9ZcHxQQmhVWEZ9XUs="
     );
 
 if (!app.Environment.IsDevelopment())

@@ -1,4 +1,4 @@
-﻿@page "/HomeManagment"
+﻿@page "/homeManagment"
 @using HomeownersManagmentApp.Interfaces
 @using HomeownersManagmentApp.Models
 @using Syncfusion.Blazor.DropDowns
@@ -225,6 +225,9 @@
 
     protected override void OnInitialized()
     {
+        reportSnapshot = _viewService.GetSnapshot().Result;
+        datasource = reportSnapshot.Report();
+
         Views = _viewService.GetViews(Guid.NewGuid()).Result;
         selectedViewId = Views[0].Id;
         selectedView = Views[0];
@@ -298,8 +301,6 @@
                     }
             };
 
-        reportSnapshot =_viewService.GetSnapshot().Result;
-        datasource = reportSnapshot.Report();
 
     }
 

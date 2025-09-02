@@ -85,6 +85,116 @@ namespace HomeownersManagmentApp.Services
                 {
                     reportProperties = new List<ReportProperty>
                     {
+                        new ReportProperty { name = "Id", value = 3 },
+                        new ReportProperty { name = "Address", value = "вул. Хрещатик, 25" },
+                        new ReportProperty { name = "City", value = "Київ" },
+                        new ReportProperty { name = "Name", value = "Бізнес-центр 'Престиж'" },
+                        new ReportProperty { name = "Region", value = "Київська область" }
+                    }
+                },
+                new ReportItem()
+                {
+                    reportProperties = new List<ReportProperty>
+                    {
+                        new ReportProperty { name = "Id", value = 4 },
+                        new ReportProperty { name = "Address", value = "вул. Хрещатик, 25" },
+                        new ReportProperty { name = "City", value = "Київ" },
+                        new ReportProperty { name = "Name", value = "Бізнес-центр 'Престиж'" },
+                        new ReportProperty { name = "Region", value = "Київська область" }
+                    }
+                },
+                new ReportItem()
+                {
+                    reportProperties = new List<ReportProperty>
+                    {
+                        new ReportProperty { name = "Id", value = 5 },
+                        new ReportProperty { name = "Address", value = "вул. Хрещатик, 25" },
+                        new ReportProperty { name = "City", value = "Київ" },
+                        new ReportProperty { name = "Name", value = "Бізнес-центр 'Престиж'" },
+                        new ReportProperty { name = "Region", value = "Київська область" }
+                    }
+                },
+                new ReportItem()
+                {
+                    reportProperties = new List<ReportProperty>
+                    {
+                        new ReportProperty { name = "Id", value = 6 },
+                        new ReportProperty { name = "Address", value = "вул. Хрещатик, 25" },
+                        new ReportProperty { name = "City", value = "Київ" },
+                        new ReportProperty { name = "Name", value = "Бізнес-центр 'Престиж'" },
+                        new ReportProperty { name = "Region", value = "Київська область" }
+                    }
+                },
+                new ReportItem()
+                {
+                    reportProperties = new List<ReportProperty>
+                    {
+                        new ReportProperty { name = "Id", value = 7 },
+                        new ReportProperty { name = "Address", value = "вул. Хрещатик, 25" },
+                        new ReportProperty { name = "City", value = "Київ" },
+                        new ReportProperty { name = "Name", value = "Бізнес-центр 'Престиж'" },
+                        new ReportProperty { name = "Region", value = "Київська область" }
+                    }
+                },
+                new ReportItem()
+                {
+                    reportProperties = new List<ReportProperty>
+                    {
+                        new ReportProperty { name = "Id", value = 8 },
+                        new ReportProperty { name = "Address", value = "вул. Хрещатик, 25" },
+                        new ReportProperty { name = "City", value = "Київ" },
+                        new ReportProperty { name = "Name", value = "Бізнес-центр 'Престиж'" },
+                        new ReportProperty { name = "Region", value = "Київська область" }
+                    }
+                },
+                new ReportItem()
+                {
+                    reportProperties = new List<ReportProperty>
+                    {
+                        new ReportProperty { name = "Id", value = 9 },
+                        new ReportProperty { name = "Address", value = "вул. Хрещатик, 25" },
+                        new ReportProperty { name = "City", value = "Київ" },
+                        new ReportProperty { name = "Name", value = "Бізнес-центр 'Престиж'" },
+                        new ReportProperty { name = "Region", value = "Київська область" }
+                    }
+                },
+                new ReportItem()
+                {
+                    reportProperties = new List<ReportProperty>
+                    {
+                        new ReportProperty { name = "Id", value = 10 },
+                        new ReportProperty { name = "Address", value = "вул. Хрещатик, 25" },
+                        new ReportProperty { name = "City", value = "Київ" },
+                        new ReportProperty { name = "Name", value = "Бізнес-центр 'Престиж'" },
+                        new ReportProperty { name = "Region", value = "Київська область" }
+                    }
+                },
+                new ReportItem()
+                {
+                    reportProperties = new List<ReportProperty>
+                    {
+                        new ReportProperty { name = "Id", value = 11 },
+                        new ReportProperty { name = "Address", value = "вул. Хрещатик, 25" },
+                        new ReportProperty { name = "City", value = "Київ" },
+                        new ReportProperty { name = "Name", value = "Бізнес-центр 'Престиж'" },
+                        new ReportProperty { name = "Region", value = "Київська область" }
+                    }
+                },
+                new ReportItem()
+                {
+                    reportProperties = new List<ReportProperty>
+                    {
+                        new ReportProperty { name = "Id", value = 12 },
+                        new ReportProperty { name = "Address", value = "вул. Хрещатик, 25" },
+                        new ReportProperty { name = "City", value = "Київ" },
+                        new ReportProperty { name = "Name", value = "Бізнес-центр 'Престиж'" },
+                        new ReportProperty { name = "Region", value = "Київська область" }
+                    }
+                },
+                new ReportItem()
+                {
+                    reportProperties = new List<ReportProperty>
+                    {
                         new ReportProperty { name = "Id", value = 15 },
                         new ReportProperty { name = "Address", value = "вул. Набережна Перемоги, 25" },
                         new ReportProperty { name = "City", value = "Дніпро" },

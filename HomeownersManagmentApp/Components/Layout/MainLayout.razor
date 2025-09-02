@@ -3,6 +3,8 @@
 <head>
     <link href="_content/Syncfusion.Blazor.Themes/bootstrap5.css" rel="stylesheet" />
     <script src="_content/Syncfusion.Blazor.Core/scripts/syncfusion-blazor.min.js" type="text/javascript"></script>
+    <script src="_framework/blazor.webassembly.js"></script>
+    <script src="_content/Telerik.UI.for.Blazor/js/telerik-blazor.js"></script>
 </head>
 
 <div class="page">
@@ -16,7 +18,9 @@
         </div>
 
         <article class="content px-4">
-            @Body
+            <Telerik.Blazor.Components.TelerikRootComponent>
+                @Body
+            </Telerik.Blazor.Components.TelerikRootComponent>
         </article>
     </main>
 </div>

@@ -1,7 +1,252 @@
 ﻿@page "/"
+@using Syncfusion.Blazor.Charts
+@using System.Globalization
+@using System.Timers
+@implements IDisposable
 
-<PageTitle>Home</PageTitle>
+<SfChart @ref="chart" Width="900px" Height="500px">
+    <ChartPrimaryXAxis ValueType="Syncfusion.Blazor.Charts.ValueType.DateTime" 
+                      IntervalType="Syncfusion.Blazor.Charts.IntervalType.Minutes"
+                      Interval="5"
+                      EdgeLabelPlacement="Syncfusion.Blazor.Charts.EdgeLabelPlacement.Shift"
+                      LabelFormat="HH:mm">
+        <ChartAxisMajorGridLines Width="0"></ChartAxisMajorGridLines>
+        <ChartAxisCrosshairTooltip Enable="true" Fill="#ffffff">
+        </ChartAxisCrosshairTooltip>
+        <ChartAxisZoomSettings EnableMouseWheelZooming="true" EnablePinchZooming="true" EnableSelectionZooming="true">
+            <ChartAxisZoomScrollbars Enable="true" EnableZoom="true"></ChartAxisZoomScrollbars>
+        </ChartAxisZoomSettings>
+    </ChartPrimaryXAxis>
 
-<h1>Hello, world!</h1>
+    <ChartPrimaryYAxis>
+        <ChartAxisMajorGridLines Width="1"></ChartAxisMajorGridLines>
+        <ChartAxisCrosshairTooltip Enable="true" Fill="#ffffff">
+        </ChartAxisCrosshairTooltip>
+        <ChartAxisZoomSettings EnableMouseWheelZooming="true" EnablePinchZooming="true">
+        </ChartAxisZoomSettings>
+    </ChartPrimaryYAxis>
 
-Welcome to your new app.
+    <!-- Налаштування crosshair для всього графіка -->
+    <ChartCrosshairSettings Enable="true" LineType="LineType.Both">
+        <ChartCrosshairLine Width="1" Color="blue"></ChartCrosshairLine>
+        <ChartCrosshairMarkerSettings Visible="true">
+            <ChartCrosshairMarkerBorder Width="2" Color="#ffffff"></ChartCrosshairMarkerBorder>
+        </ChartCrosshairMarkerSettings>
+    </ChartCrosshairSettings>
+
+    <!-- Налаштування zoom для всього графіка -->
+    <ChartZoomSettings EnableSelectionZooming="true" EnableMouseWheelZooming="true" EnablePinchZooming="true"
+                      Mode="ZoomMode.X" EnableScrollbar="true">
+        <ChartZoomScrollbars Enable="true" EnableZoom="true" Color="lightgray" Height="12" GripColor="darkgray">
+        </ChartZoomScrollbars>
+    </ChartZoomSettings>
+
+    <ChartSeriesCollection>
+        <!-- Основна свічкова серія -->
+        <ChartSeries DataSource="@StockDetails" XName="X" High="High" Low="Low" Open="Open" Close="Close" 
+                    Type="Syncfusion.Blazor.Charts.ChartSeriesType.Candle" Name="Candles">
+            <ChartMarker Visible="false"></ChartMarker>
+            <!-- Додаємо спеціальні налаштування для crosshair свічок -->
+            <ChartSeriesCrosshairSettings Enable="true">
+                <ChartSeriesCrosshairLine Width="2" Color="orange"></ChartSeriesCrosshairLine>
+                <ChartSeriesCrosshairMarkerSettings Visible="true" Height="8" Width="8" Shape="ChartShape.Rectangle">
+                    <ChartSeriesCrosshairMarkerBorder Width="2" Color="#ffffff"></ChartSeriesCrosshairMarkerBorder>
+                </ChartSeriesCrosshairMarkerSettings>
+            </ChartSeriesCrosshairSettings>
+        </ChartSeries>
+
+        <!-- Сигнали покупки -->
+        <ChartSeries DataSource="@BuySignals" XName="X" YName="Y" Type="Syncfusion.Blazor.Charts.ChartSeriesType.Scatter" Name="Buy Signals">
+            <ChartMarker Visible="true" Height="15" Width="15" Shape="ChartShape.Triangle" Fill="green">
+                <ChartMarkerBorder Width="2" Color="darkgreen"></ChartMarkerBorder>
+            </ChartMarker>
+            <!-- Вимкнути crosshair для сигналів -->
+            <ChartSeriesCrosshairSettings Enable="false"></ChartSeriesCrosshairSettings>
+        </ChartSeries>
+
+        <!-- Сигнали продажу -->
+        <ChartSeries DataSource="@SellSignals" XName="X" YName="Y" Type="Syncfusion.Blazor.Charts.ChartSeriesType.Scatter" Name="Sell Signals">
+            <ChartMarker Visible="true" Height="15" Width="15" Shape="ChartShape.InvertedTriangle" Fill="red">
+                <ChartMarkerBorder Width="2" Color="darkred"></ChartMarkerBorder>
+            </ChartMarker>
+            <!-- Вимкнути crosshair для сигналів -->
+            <ChartSeriesCrosshairSettings Enable="false"></ChartSeriesCrosshairSettings>
+        </ChartSeries>
+    </ChartSeriesCollection>
+
+    <ChartLegendSettings Visible="true"></ChartLegendSettings>
+    
+    <!-- Додаткові налаштування tooltip -->
+    <ChartTooltipSettings Enable="true" Shared="true" Format="Time: <b>${point.x:HH:mm}</b><br/>Open: <b>${point.open}</b><br/>High: <b>${point.high}</b><br/>Low: <b>${point.low}</b><br/>Close: <b>${point.close}</b>">
+    </ChartTooltipSettings>
+</SfChart>
+
+@code {
+    private SfChart chart;
+    private Timer dataTimer;
+    private Random random = new Random();
+    private DateTime lastCandleTime;
+
+    public class Data
+    {
+        public DateTime X { get; set; }
+        public double Y { get; set; }
+        public double High { get; set; }
+        public double Low { get; set; }
+        public double Open { get; set; }
+        public double Close { get; set; }
+    }
+
+    public class SignalData
+    {
+        public DateTime X { get; set; }
+        public double Y { get; set; }
+    }
+
+    public List<Data> StockDetails = new List<Data>();
+    public List<SignalData> BuySignals = new List<SignalData>();
+    public List<SignalData> SellSignals = new List<SignalData>();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await GenerateInitialStockData();
+        InitializeTimer();
+        await base.OnInitializedAsync();
+    }
+
+    private void InitializeTimer()
+    {
+        dataTimer = new Timer(1000); // 1 секунда
+        dataTimer.Elapsed += async (sender, e) => await AddNewCandle();
+        dataTimer.AutoReset = true;
+        dataTimer.Start();
+    }
+
+    private async Task AddNewCandle()
+    {
+        await InvokeAsync(async () =>
+        {
+            if (StockDetails.Count > 0)
+            {
+                var lastCandle = StockDetails.Last();
+                lastCandleTime = lastCandle.X.AddMinutes(5);
+
+                // Генеруємо нову свічку зміною в межах ±0.5
+                var change = (random.NextDouble() - 0.5); // від -0.5 до +0.5
+
+                var open = lastCandle.Close;
+                var close = open + change;
+
+                // Забезпечуємо, щоб ціна залишалася в районі 100
+                if (close < 95) close = 95 + random.NextDouble() * 2;
+                if (close > 105) close = 105 - random.NextDouble() * 2;
+
+                // Визначаємо high і low
+                var minChange = Math.Abs(change) * 0.3;
+                var maxChange = Math.Abs(change) * 0.7;
+
+                var high = Math.Max(open, close) + minChange + (random.NextDouble() * maxChange);
+                var low = Math.Min(open, close) - minChange - (random.NextDouble() * maxChange);
+
+                high = Math.Max(high, low + 0.01);
+
+                var newCandle = new Data
+                    {
+                        X = lastCandleTime,
+                        Open = Math.Round(open, 2),
+                        High = Math.Round(high, 2),
+                        Low = Math.Round(low, 2),
+                        Close = Math.Round(close, 2),
+                        Y = Math.Round((open + high + low + close) / 4, 2)
+                    };
+
+                StockDetails.Add(newCandle);
+
+                // Іноді додаємо сигнали (5% шанс)
+                if (random.NextDouble() < 0.05)
+                {
+                    if (random.NextDouble() < 0.5)
+                    {
+                        BuySignals.Add(new SignalData { X = newCandle.X, Y = newCandle.Low - 1 });
+                    }
+                    else
+                    {
+                        SellSignals.Add(new SignalData { X = newCandle.X, Y = newCandle.High + 1 });
+                    }
+                }
+
+                // Оновлюємо графік
+                StateHasChanged();
+
+                // Автоматично скролимо до останньої свічки
+                await Task.Delay(100);
+                if (chart != null)
+                {
+                    //await chart.RefreshAsync();
+                }
+            }
+        });
+    }
+
+    private async Task GenerateInitialStockData()
+    {
+        var baseDate = DateTime.Today.AddDays(-1);
+
+        // Генеруємо початкові дані з 9:30 до поточного часу
+        var startTime = new DateTime(baseDate.Year, baseDate.Month, baseDate.Day, 9, 30, 0);
+        var currentTime = startTime;
+
+        double previousClose = 100.0; // Початкова ціна рівно 100
+
+        while (currentTime <= DateTime.Now)
+        {
+            // Пропускаємо нічний проміжок (20:00 - 9:30 наступного дня)
+            if (currentTime.TimeOfDay >= TimeSpan.FromHours(20) || currentTime.TimeOfDay < TimeSpan.FromHours(9.5))
+            {
+                currentTime = currentTime.AddMinutes(5);
+                continue;
+            }
+
+            // Генеруємо зміну ціни в межах ±0.5
+            var change = (random.NextDouble() - 0.5); // від -0.5 до +0.5
+
+            var open = previousClose;
+            var close = open + change; // Додаємо/віднімаємо не більше 0.5
+
+            // Забезпечуємо, щоб ціна залишалася в розумних межах навколо 100
+            if (close < 95) close = 95 + random.NextDouble() * 2;
+            if (close > 105) close = 105 - random.NextDouble() * 2;
+
+            // Визначаємо high і low на основі open і close
+            var minChange = Math.Abs(change) * 0.3;
+            var maxChange = Math.Abs(change) * 0.7;
+
+            var high = Math.Max(open, close) + minChange + (random.NextDouble() * maxChange);
+            var low = Math.Min(open, close) - minChange - (random.NextDouble() * maxChange);
+
+            // Забезпечуємо, що high > low
+            high = Math.Max(high, low + 0.01);
+
+            StockDetails.Add(new Data
+                {
+                    X = currentTime,
+                    Open = Math.Round(open, 2),
+                    High = Math.Round(high, 2),
+                    Low = Math.Round(low, 2),
+                    Close = Math.Round(close, 2),
+                    Y = Math.Round((open + high + low + close) / 4, 2)
+                });
+
+            previousClose = close;
+            currentTime = currentTime.AddMinutes(5);
+        }
+
+        lastCandleTime = StockDetails.Count > 0 ? StockDetails.Last().X : DateTime.Now;
+    }
+
+    public void Dispose()
+    {
+        dataTimer?.Stop();
+        dataTimer?.Dispose();
+    }
+}
